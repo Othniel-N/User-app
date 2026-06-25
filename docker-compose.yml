@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    image: 139979204348.dkr.ecr.ap-south-1.amazonaws.com/userapp-backend
     container_name: userapp_backend
     restart: unless-stopped
     environment:
@@ -18,10 +18,7 @@ services:
       - uploads:/app/uploads
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        REACT_APP_API_URL: http://devops-assignment-alb-443631284.ap-south-1.elb.amazonaws.com
+    image: 139979204348.dkr.ecr.ap-south-1.amazonaws.com/userapp-frontend
     container_name: userapp_frontend
     restart: unless-stopped
     ports:
