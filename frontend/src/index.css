@@ -1,0 +1,27 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --card:      #21253a;
+  --border:    #2e3349;
+  --accent:    #6c63ff;
+  --accent2:   #a78bfa;
+  --danger:    #ff4d6d;
+  --success:   #22d3a5;
+  --text:      #e8eaf6;
+  --muted:     #8b90b0;
+  --radius:    12px;
+  --font:      'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }

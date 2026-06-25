@@ -1,0 +1,174 @@
+{
+  "uid": "userapp-application",
+  "title": "UserApp — Application Metrics",
+  "tags": ["userapp", "application"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_requests_total[1m])) by (route, method)",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Error Rate (errors/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(http_errors_total[1m])) by (route, status_code)",
+          "legendFormat": "{{status_code}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "P50 / P95 / P99 Latency",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 16, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, route))",
+          "legendFormat": "p50 {{route}}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, route))",
+          "legendFormat": "p95 {{route}}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, route))",
+          "legendFormat": "p99 {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Active Requests",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 8, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "http_active_requests",
+          "legendFormat": "Active"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "yellow", "value": 10 },
+            { "color": "red", "value": 50 }
+          ]}
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Total Users in DB",
+      "type": "stat",
+      "gridPos": { "x": 20, "y": 8, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "app_total_users",
+          "legendFormat": "Users"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } }
+      }
+    },
+    {
+      "id": 6,
+      "title": "DB Query Duration P95 (by operation)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[1m])) by (le, operation))",
+          "legendFormat": "p95 {{operation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "HTTP Status Code Breakdown",
+      "type": "piechart",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(http_requests_total) by (status_code)",
+          "legendFormat": "HTTP {{status_code}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Node.js Heap Used",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 7 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "nodejs_heap_size_used_bytes",
+          "legendFormat": "Heap Used"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "nodejs_heap_size_total_bytes",
+          "legendFormat": "Heap Total"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 9,
+      "title": "Event Loop Lag (p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 7 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.99, rate(nodejs_eventloop_lag_seconds_bucket[1m]))",
+          "legendFormat": "Event Loop Lag p99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    }
+  ]
+}
