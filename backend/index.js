@@ -107,6 +107,9 @@ const pool = new Pool({
   database: process.env.DB_NAME     || 'userapp',
   user:     process.env.DB_USER     || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 async function initDB() {
@@ -124,7 +127,15 @@ async function initDB() {
 }
 
 // ── Middleware ───────────────────────────────────────────────────────
-app.use(cors());
+//app.use(cors());
+app.use(cors({
+  origin: [
+    'http://devops-assignment-alb-443631284.ap-south-1.elb.amazonaws.com',
+    'http://localhost:3000',
+  ],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 app.use(metricsMiddleware);   // ← metrics tracking on all routes
 
