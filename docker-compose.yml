@@ -21,11 +21,11 @@ services:
     build:
       context: ./frontend
       args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:4000}
+        REACT_APP_API_URL: http://devops-assignment-alb-443631284.ap-south-1.elb.amazonaws.com
     container_name: userapp_frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - backend
 
@@ -40,6 +40,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
+      - '--web.external-url=http://devops-assignment-alb-443631284.ap-south-1.elb.amazonaws.com/prometheus'
     ports:
       - "9090:9090"
     depends_on:
@@ -57,8 +58,9 @@ services:
       - grafanadata:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini
     ports:
-      - "3001:3000"
+      - "3000:3000"
     depends_on:
       - prometheus
 
