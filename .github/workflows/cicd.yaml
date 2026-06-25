@@ -1,0 +1,145 @@
+name: CI-CD
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: docker.io
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/userapp-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/userapp-frontend
+
+jobs:
+
+  test:
+    if: github.event_name == 'pull_request'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Backend Tests
+        working-directory: backend
+        run: |
+          npm install
+          npm test
+
+      - name: Frontend Tests
+        working-directory: frontend
+        run: |
+          npm install
+          npm test -- --watchAll=false
+
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy FS Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+
+  build-and-push:
+    if: github.ref == 'refs/heads/main'
+
+    needs:
+      - security-scan
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Backend
+        run: |
+          docker build -t $BACKEND_IMAGE:${{ github.sha }} ./backend
+
+      - name: Build Frontend
+        run: |
+          docker build -t $FRONTEND_IMAGE:${{ github.sha }} ./frontend
+
+      - name: Push Backend
+        run: |
+          docker push $BACKEND_IMAGE:${{ github.sha }}
+
+      - name: Push Frontend
+        run: |
+          docker push $FRONTEND_IMAGE:${{ github.sha }}
+
+  deploy-staging:
+    environment: staging
+
+    needs:
+      - build-and-push
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+          --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+          --document-name "AWS-RunShellScript" \
+          --parameters 'commands=[
+          "cd /home/ssm-user/User-app",
+          "docker compose pull",
+          "docker compose down",
+          "docker compose up -d"
+          ]'
+
+  deploy-production:
+    environment: production
+
+    needs:
+      - deploy-staging
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy Production
+        run: |
+          aws ssm send-command \
+          --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+          --document-name "AWS-RunShellScript" \
+          --parameters 'commands=[
+          "cd /home/ssm-user/User-app",
+          "docker compose pull",
+          "docker compose down",
+          "docker compose up -d"
+          ]'
