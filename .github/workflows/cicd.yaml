@@ -1,4 +1,4 @@
-name: Full CI/CD Pipeline (ECR + SSM)
+name: cicdipeline
 
 on:
   pull_request:
