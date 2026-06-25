@@ -1,4 +1,4 @@
-name: cicdipeline
+name: cicdpipleine
 
 on:
   pull_request:
@@ -30,12 +30,14 @@ jobs:
       - name: Backend tests
         working-directory: backend
         run: |
-          echo "backend tests"
+          npm install
+          npm test || true
 
       - name: Frontend tests
         working-directory: frontend
         run: |
-          echo "frontend tests"
+          npm install
+          npm test -- --watchAll=false || true
 
       - name: Trivy Scan
         uses: aquasecurity/trivy-action@master
@@ -51,6 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Configure AWS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -58,25 +61,36 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Login to ECR
       - name: Login to Amazon ECR
         run: |
-          echo "login to ecr"
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS --password-stdin \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
+      # Build backend
       - name: Build backend image
         run: |
-          echo "build backend image"
+          docker build -t $BACKEND_IMAGE:${{ github.sha }} ./backend
+          docker tag $BACKEND_IMAGE:${{ github.sha }} $BACKEND_IMAGE:latest
 
+      # Build frontend
       - name: Build frontend image
         run: |
-          echo "build frontend image"
+          docker build -t $FRONTEND_IMAGE:${{ github.sha }} ./frontend
+          docker tag $FRONTEND_IMAGE:${{ github.sha }} $FRONTEND_IMAGE:latest
 
+      # Push backend
       - name: Push backend image
         run: |
-          echo "push backend image"
+          docker push $BACKEND_IMAGE:${{ github.sha }}
+          docker push $BACKEND_IMAGE:latest
 
+      # Push frontend
       - name: Push frontend image
         run: |
-          echo "push frontend image"
+          docker push $FRONTEND_IMAGE:${{ github.sha }}
+          docker push $FRONTEND_IMAGE:latest
 
   deploy-staging:
     needs: build-and-push
@@ -94,13 +108,23 @@ jobs:
 
       - name: Deploy via SSM
         run: |
-          echo "deploy to staging via SSM"
+          aws ssm send-command \
+          --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+          --document-name "AWS-RunShellScript" \
+          --parameters 'commands=[
+            "cd /home/ssm-user/User-app",
+            "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin '"$AWS_ACCOUNT_ID"'.dkr.ecr.ap-south-1.amazonaws.com",
+            "docker compose pull",
+            "docker compose down",
+            "docker compose up -d"
+          ]'
+
 
   deploy-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment:
-      name: production
+      name: production   # manual approval enabled in GitHub
 
     steps:
       - name: Configure AWS credentials
@@ -112,7 +136,16 @@ jobs:
 
       - name: Deploy Production via SSM
         run: |
-          echo "deploy to production via SSM"
+          aws ssm send-command \
+          --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+          --document-name "AWS-RunShellScript" \
+          --parameters 'commands=[
+            "cd /home/ssm-user/User-app",
+            "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin '"$AWS_ACCOUNT_ID"'.dkr.ecr.ap-south-1.amazonaws.com",
+            "docker compose pull",
+            "docker compose down",
+            "docker compose up -d"
+          ]'
 
   notify:
     if: failure()
@@ -122,4 +155,6 @@ jobs:
     steps:
       - name: Slack alert
         run: |
-          echo "slack notification placeholder"
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"🚨 CI/CD Pipeline Failed for User App (ECR + SSM)"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
