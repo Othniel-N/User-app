@@ -215,7 +215,7 @@ DB_PASSWORD=<password>
 EOF
 ```
 
-### Start the stack
+### Start the Application
 
 ```bash
 cd /home/ssm-user/User-app
