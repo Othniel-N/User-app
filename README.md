@@ -191,7 +191,7 @@ aws ssm send-command \
   ]'
 ```
 
-No open SSH ports. No key management. Full audit trail via CloudTrail.
+No open SSH ports. 
 
 ---
 
