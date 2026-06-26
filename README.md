@@ -325,7 +325,7 @@ Named volumes (`uploads`, `grafanadata`, `promdata`) persist across container re
 
 ---
 
-## 🔄 Teardown
+## Teardown
 
 ```bash
 cd terraform/
