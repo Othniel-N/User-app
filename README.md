@@ -2,7 +2,6 @@
 
 
 ---
-
 ## Project Overview
 
 This project demonstrates a complete, production-style DevOps pipeline for a full-stack User Management application deployed on AWS. It covers Infrastructure as Code, CI/CD automation, containerised deployment, centralized monitoring, and secure access.
