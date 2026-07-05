@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 
-const API = process.env.REACT_APP_API_URL || 'http://devops-assignment-alb-443631284.ap-south-1.elb.amazonaws.com' ;
+const API = process.env.REACT_APP_API_URL || 'http://devops-assignment-alb-1852417185.ap-south-1.elb.amazonaws.com' ;
 
 const ROLES = ['Member', 'Admin', 'Editor', 'Viewer'];
 
