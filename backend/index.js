@@ -130,7 +130,7 @@ async function initDB() {
 //app.use(cors());
 app.use(cors({
   origin: [
-    'http://devops-assignment-alb-443631284.ap-south-1.elb.amazonaws.com',
+    'http://devops-assignment-alb-1852417185.ap-south-1.elb.amazonaws.com',
     'http://localhost:3000',
   ],
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
