@@ -114,9 +114,9 @@ jobs:
           --parameters 'commands=[
             "cd /home/ssm-user/User-app",
             "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin '"$AWS_ACCOUNT_ID"'.dkr.ecr.ap-south-1.amazonaws.com",
+            "docker compose down --remove-orphans",
             "docker compose pull",
-            "docker compose down",
-            "docker compose up -d"
+            "docker compose up -d --force-recreate --pull always"
           ]'
 
 
